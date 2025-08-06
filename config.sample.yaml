@@ -1,0 +1,21 @@
+jellyseer:
+  api_url: "http://192.168.1.2:5055/api/v1"
+  api_key: "key"
+
+sonarr:
+  url: "http://192.168.1.2:8989"
+  api_key: "key"
+
+radarr:
+  url: "http://192.168.1.2:7878"
+  api_key: "key"
+
+whitelisted_users:
+  - alice
+  - bob
+
+retention_days:
+  movies: 30
+  tv: 60
+
+dry_run: true  # false = delete permanently
