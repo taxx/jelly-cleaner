@@ -1,0 +1,1 @@
+Samples from the Jellyseer endpoint for dev-purposes.

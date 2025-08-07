@@ -1,36 +1,83 @@
 import requests
 
 class JellyseerClient:
-    def __init__(self, api_url, api_key):
-        self.base_url = api_url.rstrip("/")
-        self.headers = {
-            "accept": "application/json",
-            "ApiKey": api_key
-        }
+    def __init__(self, base_url, email, password):
+        self.base_url = base_url.rstrip("/")
+        self.session = requests.Session()
+        self.email = email
+        self.password = password
+        self.authenticated = False
+
+    def login(self):
+        url = f"{self.base_url}/auth/local"
+        payload = {"email": self.email, "password": self.password}
+        response = self.session.post(url, json=payload)
+        if response.status_code == 200:
+            self.authenticated = True
+            print("🔐 Jellyseer login successful")
+        else:
+            raise Exception(f"Login failed: {response.status_code} {response.text}")
 
     def get_requests(self):
-        url = f"{self.base_url}/Request"
-        response = requests.get(url, headers=self.headers)
+        if not self.authenticated:
+            self.login()
+        url = f"{self.base_url}/Request?take=1000&skip=0&filter=available&sort=added&sortDirection=desc&mediaType=all"
+        response = self.session.get(url)
         response.raise_for_status()
-        return response.json()
+        return response.json().get("results", [])
 
-    def get_requested_titles(self, whitelisted_users):
+    def get_old_requests(self, whitelisted_users, cutoff_datetime):
         raw_requests = self.get_requests()
+        deletions = []
 
-        movie_titles = set()
-        tv_titles = set()
+        for request in raw_requests:
+            requested_by = request.get("requestedBy", {})
+            username = (
+                requested_by.get("jellyfinUsername")
+                or requested_by.get("displayName")
+                or ""
+            ).lower()
 
-        for r in raw_requests:
-            user = r.get("requestedUser", {}).get("userAlias", "")
-            title = r.get("title", "").strip().lower()
-            media_type = r.get("mediaType")
+            if username in whitelisted_users:
+                continue
 
-            if user in whitelisted_users:
-                continue  # Skip whitelisted
+            created_at = request.get("createdAt")
+            if not created_at or created_at > cutoff_datetime.isoformat():
+                continue
 
-            if media_type == "movie":
-                movie_titles.add(title)
-            elif media_type == "tv":
-                tv_titles.add(title)
+            media = request.get("media")
+            if not media:
+                continue
 
-        return movie_titles, tv_titles
+            media_id = media.get("id")
+            title = media.get("title", "unknown title")
+
+            deletions.append((media_id, title))
+
+        return deletions
+
+    def delete_media(self, media_id):
+        if not self.authenticated:
+            self.login()
+
+        headers = {"accept": "*/*"}
+
+        # Step 1: delete media files
+        file_url = f"{self.base_url}/api/v1/media/{media_id}/file"
+        file_resp = self.session.delete(file_url, headers=headers)
+        if file_resp.status_code == 204:
+            print(f"🗑️  Deleted files for media ID {media_id}")
+        elif file_resp.status_code == 404:
+            print(f"⚠️  Files not found for media ID {media_id} (might already be gone)")
+        else:
+            print(f"❌ Failed to delete files: {file_resp.status_code} {file_resp.text}")
+
+        # Step 2: delete media metadata
+        meta_url = f"{self.base_url}/api/v1/media/{media_id}"
+        meta_resp = self.session.delete(meta_url, headers=headers)
+        if meta_resp.status_code == 204:
+            print(f"🧹 Deleted metadata for media ID {media_id}")
+        elif meta_resp.status_code == 404:
+            print(f"⚠️  Metadata not found for media ID {media_id}")
+        else:
+            print(f"❌ Failed to delete metadata: {meta_resp.status_code} {meta_resp.text}")

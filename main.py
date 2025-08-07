@@ -1,7 +1,6 @@
 import yaml
+from datetime import datetime, timedelta
 from jellyseer_client import JellyseerClient
-from radarr_cleaner import RadarrCleaner
-from sonarr_cleaner import SonarrCleaner
 
 def load_config():
     with open("config.yaml", "r") as f:
@@ -10,40 +9,35 @@ def load_config():
 def main():
     config = load_config()
 
+    whitelisted_users = set(user.lower() for user in config.get("whitelist", []))
     dry_run = config.get("dry_run", True)
 
-    # Jellyseer
+    jellyseer_cfg = config.get("jellyseer", {})
     jellyseer = JellyseerClient(
-        config["jellyseer"]["api_url"],
-        config["jellyseer"]["api_key"]
+        base_url=jellyseer_cfg["api_url"],
+        email=jellyseer_cfg["email"],
+        password=jellyseer_cfg["password"]
     )
 
-    whitelisted_users = set(config.get("whitelisted_users", []))
-    movie_titles, tv_titles = jellyseer.get_requested_titles(whitelisted_users)
+    retention_cfg = config.get("retention_days", {})
+    retention_movies = int(retention_cfg.get("movies", 60))
+    retention_tv = int(retention_cfg.get("tv", 60))
 
-    # Radarr
-    radarr = RadarrCleaner(
-        base_url=config["radarr"]["url"],
-        api_key=config["radarr"]["api_key"],
-        retention_days=config["retention_days"]["movies"],
-        dry_run=dry_run
+    now = datetime.now()
+    cutoff_movies = now - timedelta(days=retention_movies)
+    cutoff_tv = now - timedelta(days=retention_tv)
+
+    deletions = jellyseer.get_old_requests(
+        whitelisted_users=whitelisted_users,
+        cutoff_datetime=min(cutoff_movies, cutoff_tv)
     )
 
-    # Sonarr
-    sonarr = SonarrCleaner(
-        base_url=config["sonarr"]["url"],
-        api_key=config["sonarr"]["api_key"],
-        retention_days=config["retention_days"]["tv"],
-        dry_run=dry_run
-    )
+    print(f"🧹 Found {len(deletions)} media items to delete")
 
-    print("\n📦 Starting movie cleanup (Radarr)...")
-    radarr.clean(movie_titles)
-
-    print("\n📺 Starting TV show cleanup (Sonarr)...")
-    sonarr.clean(tv_titles)
-
-    print("\n✅ Cleanup finished.")
+    for media_id, title in deletions:
+        print(f"🗑️  Would delete: {title} (ID: {media_id})")
+        if not dry_run:
+            jellyseer.delete_media(media_id)
 
 if __name__ == "__main__":
     main()
