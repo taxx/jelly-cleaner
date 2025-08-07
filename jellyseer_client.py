@@ -26,7 +26,16 @@ class JellyseerClient:
         response.raise_for_status()
         return response.json().get("results", [])
 
+    def get_media_title(self, slug_id, media_type):
+        if not self.authenticated:
+            self.login()
+        url = f"{self.base_url}/{media_type}/{slug_id}"
+        response = self.session.get(url)
+        response.raise_for_status()
+        return response.json().get("originalTitle", "unknown title")
+
     def get_old_requests(self, whitelisted_users, cutoff_datetime):
+        print("cutoff_datetime:", cutoff_datetime)
         raw_requests = self.get_requests()
         deletions = []
 
@@ -39,6 +48,7 @@ class JellyseerClient:
             ).lower()
 
             if username in whitelisted_users:
+                #print(f"Skipping whitelisted user: {username}")
                 continue
 
             created_at = request.get("createdAt")
@@ -50,7 +60,7 @@ class JellyseerClient:
                 continue
 
             media_id = media.get("id")
-            title = media.get("title", "unknown title")
+            title = self.get_media_title(media.get("externalServiceSlug"), media.get("mediaType"))
 
             deletions.append((media_id, title))
 
