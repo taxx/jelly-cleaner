@@ -1,14 +1,8 @@
 jellyseer:
   api_url: "http://192.168.1.2:5055/api/v1"
-  api_key: "key"
-
-sonarr:
-  url: "http://192.168.1.2:8989"
-  api_key: "key"
-
-radarr:
-  url: "http://192.168.1.2:7878"
-  api_key: "key"
+  # Local jellyseeer account with admin rights
+  email: "user@example.com"
+  password: "password"
 
 whitelisted_users:
   - alice
