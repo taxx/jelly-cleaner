@@ -12,7 +12,7 @@ It's useful for home media servers with limited space and supports:
 
 - Deletes **Movies and TV shows**
 - Skips requests by **whitelisted users**
-- Uses **Jellyseerr API**, expects to us cookie based auth with a jellyseer user with correct permissions
+- Uses **Jellyseerr API** _(api-spec available at: jellyseer-server/api-docs)_, expects to us cookie based auth with a jellyseer user with correct permissions
 - Supports **dry-run** mode (no actual deletion)
 
 ---
@@ -25,7 +25,7 @@ It's useful for home media servers with limited space and supports:
 
 ---
 
-## 📦 Setup
+## 📦 Local Setup
 
 1. **Clone the repo** (or copy files into a folder):
 
