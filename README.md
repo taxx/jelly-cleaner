@@ -48,3 +48,11 @@ pip install -r requirements.txt
 
 4. **Configuration** using config.yaml:
 Create a `config.yaml` according to the `config.yaml.sample`.
+
+## 🫙 Docker and Docker Compose
+Clone the repo.
+Create and adjust the `config.yaml` file based of the `config.yaml.sample`.
+Adjust the `crontab` file to your liking
+Start the docker container: `docker compose up -d`
+_(Force rebuild: `docker compose down && docker compose build --no-cache && docker compose up -d`)_
+Show the logs: `docker compose logs -n 10 -f`
