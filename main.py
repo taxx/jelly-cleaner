@@ -1,6 +1,6 @@
 import yaml
 from datetime import datetime, timedelta
-from jellyseer_client import JellyseerClient
+from jellyseerr_client import JellyseerrClient
 
 def load_config():
     with open("config.yaml", "r") as f:
@@ -13,7 +13,7 @@ def main():
     dry_run = config.get("dry_run", True)
 
     jellyseer_cfg = config.get("jellyseer", {})
-    jellyseer = JellyseerClient(
+    jellyseer = JellyseerrClient(
         base_url=jellyseer_cfg["api_url"],
         email=jellyseer_cfg["email"],
         password=jellyseer_cfg["password"]

@@ -1,6 +1,6 @@
 import requests
 
-class JellyseerClient:
+class JellyseerrClient:
     def __init__(self, base_url, email, password):
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
@@ -14,7 +14,7 @@ class JellyseerClient:
         response = self.session.post(url, json=payload)
         if response.status_code == 200:
             self.authenticated = True
-            print("🔐 Jellyseer login successful")
+            #print("🔐 Jellyseerr login successful")
         else:
             raise Exception(f"Login failed: {response.status_code} {response.text}")
 
@@ -25,16 +25,16 @@ class JellyseerClient:
         url = f"{self.base_url}/request?take=1000&skip=0&filter=all&sort=added&sortDirection=desc&mediaType=all"
         response = self.session.get(url)
         response.raise_for_status()
+
         return response.json().get("results", [])
-        #results = response.json().get("results", [])
-        #print(results)
-        #return results
     
     def get_media_title(self, slug_id, media_type):
         if not self.authenticated:
             self.login()
         url = f"{self.base_url}/{media_type}/{slug_id}"
+
         #print(f"Fetching title for {media_type} with slug ID {slug_id} from {url}")
+
         response = self.session.get(url)
         response.raise_for_status()
 
@@ -44,7 +44,6 @@ class JellyseerClient:
         return response.json().get("originalTitle", "unknown title")
 
     def get_old_requests(self, cutoff_datetime, whitelisted_users):
-        #print("cutoff_datetime:", cutoff_datetime)
         raw_requests = self.get_requests()
         deletions = []
 
@@ -107,15 +106,16 @@ class JellyseerClient:
         print(f"🗑️  Deleting files for media ID {media_id}...")
         file_url = f"{self.base_url}/media/{media_id}/file"
         file_resp = self.session.delete(file_url, headers=headers)
+
         if file_resp.status_code == 204:
-            print(f"  🗑️  Deleted files for media ID {media_id}")
+            print(f"  🧹  Deleted files for media ID {media_id}")
         elif file_resp.status_code == 404:
             print(f"  ⚠️  Files not found for media ID {media_id} (might already be gone)")
         else:
             print(f"  ❌ Failed to delete files: {file_resp.status_code} {file_resp.text}")
 
         # Step 2: delete media metadata
-        print
+        print(f"🗑️  Deleting metadata for media ID {media_id}...")
         meta_url = f"{self.base_url}/media/{media_id}"
         meta_resp = self.session.delete(meta_url, headers=headers)
         if meta_resp.status_code == 204:
@@ -135,4 +135,4 @@ class JellyseerClient:
         request_resp = self.session.delete(request_url, headers=headers)
         #print(request_resp.status_code, request_resp.text)
         if request_resp.status_code == 204:
-            print(f"  🗑️  Deleted request with ID {request_id}")
+            print(f"  🧹  Deleted request with ID {request_id}")
