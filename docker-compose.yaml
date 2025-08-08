@@ -4,6 +4,6 @@ services:
     environment:
       - TZ=Europe/Stockholm
     volumes:
-      - ~/crontab:/app/crontab
-      - ~/config.yaml:/app/config.yaml
+      - ./crontab:/app/crontab
+      - ./config.yaml:/app/config.yaml
     restart: unless-stopped
