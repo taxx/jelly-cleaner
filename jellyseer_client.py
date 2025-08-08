@@ -21,11 +21,15 @@ class JellyseerClient:
     def get_requests(self):
         if not self.authenticated:
             self.login()
-        url = f"{self.base_url}/Request?take=1000&skip=0&filter=available&sort=added&sortDirection=desc&mediaType=all"
+        # api/v1/request?take=1000&skip=0&filter=available&sort=added&sortDirection=desc&mediaType=all'
+        url = f"{self.base_url}/request?take=1000&skip=0&filter=all&sort=added&sortDirection=desc&mediaType=movie"
         response = self.session.get(url)
         response.raise_for_status()
-        return response.json().get("results", [])
-
+        #return response.json().get("results", [])
+        results = response.json().get("results", [])
+        #print(results)
+        return results
+    
     def get_media_title(self, slug_id, media_type):
         if not self.authenticated:
             self.login()
@@ -71,8 +75,11 @@ class JellyseerClient:
                 continue
 
             media_id = media.get("id")
-            title = self.get_media_title(media.get("externalServiceSlug"), media.get("mediaType"))
+
             request_id = request.get("id")
+            print(f"Processing request ID {request_id} for media ID {media_id} requested by {username}")
+            #print(request)
+            title = self.get_media_title(media.get("tmdbId"), media.get("mediaType"))
             deletions.append((media_id, title, created_at, request_id, username))
 
         return deletions
