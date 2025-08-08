@@ -9,7 +9,6 @@ whitelisted_users:
   - bob
 
 retention_days:
-  movies: 30
-  tv: 60
+  all: 60
 
 dry_run: true  # false = delete permanently
