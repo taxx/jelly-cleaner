@@ -25,23 +25,26 @@ def main():
     now = datetime.now()
     cutoff_date = now - timedelta(days=retention_days)
  
+    print(f"⌛︎ Fetching requests older than: {cutoff_date}...")
     deletions = jellyseer.get_old_requests(
-        cutoff_datetime=cutoff_date
+        cutoff_datetime=cutoff_date,
+        whitelisted_users=whitelisted_users
     )
 
     print(f"🧹 Found {len(deletions)} media items to delete")
 
-
-    for media_id, title, created_at, request_id, username in deletions:
+    for media_id, title, created_at, request_id, username, media_type in deletions:
         if username in whitelisted_users:
             #print(f"Skipping whitelisted user: {username}")
-            print(f"🙈  Skipping to delete request from {username}: {title} (ID: {media_id}), Created at: {created_at}, Request ID: {request_id}")
+            #print(f"🙈  Skipping to delete request from {username}: {title} (ID: {media_id}), Created at: {created_at}, Request ID: {request_id}")
 
             continue
 
-        print(f"🗑️  Would delete: {title} (ID: {media_id}), Created at: {created_at}, Request ID: {request_id}, Requested by: {username})")
+        action = "Would" if dry_run else "Will"
+        print(f"🗑️  {action} delete: {media_type} - {title} (ID: {media_id}), Created at: {created_at}, Request ID: {request_id}, Requested by: {username})")
         if not dry_run:
             jellyseer.delete_media(media_id)
+            jellyseer.delete_request(request_id)
 
 if __name__ == "__main__":
     main()
