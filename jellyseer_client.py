@@ -34,22 +34,33 @@ class JellyseerClient:
         response.raise_for_status()
         return response.json().get("originalTitle", "unknown title")
 
-    def get_old_requests(self, whitelisted_users, cutoff_datetime):
+    def get_old_requests(self, cutoff_datetime):
         print("cutoff_datetime:", cutoff_datetime)
         raw_requests = self.get_requests()
         deletions = []
 
+        # Remove duplicates by media ID, and keep the one with the most recent createdAt date
+        unique_requests = {}
         for request in raw_requests:
+            media = request.get("media")
+            if not media:
+                continue
+            media_id = media.get("id")
+            created_at = request.get("createdAt")
+            if not media_id or not created_at:
+                continue
+            # If this media_id is not seen yet, or this request is newer, keep it
+            if (media_id not in unique_requests) or (created_at > unique_requests[media_id].get("createdAt", "")):
+                unique_requests[media_id] = request
+        filtered_requests = list(unique_requests.values())
+
+        for request in filtered_requests:
             requested_by = request.get("requestedBy", {})
             username = (
                 requested_by.get("jellyfinUsername")
                 or requested_by.get("displayName")
                 or ""
             ).lower()
-
-            if username in whitelisted_users:
-                #print(f"Skipping whitelisted user: {username}")
-                continue
 
             created_at = request.get("createdAt")
             if not created_at or created_at > cutoff_datetime.isoformat():
@@ -61,8 +72,8 @@ class JellyseerClient:
 
             media_id = media.get("id")
             title = self.get_media_title(media.get("externalServiceSlug"), media.get("mediaType"))
-
-            deletions.append((media_id, title))
+            request_id = request.get("id")
+            deletions.append((media_id, title, created_at, request_id, username))
 
         return deletions
 

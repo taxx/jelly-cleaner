@@ -20,22 +20,26 @@ def main():
     )
 
     retention_cfg = config.get("retention_days", {})
-    retention_movies = int(retention_cfg.get("movies", 60))
-    retention_tv = int(retention_cfg.get("tv", 60))
+    retention_days = int(retention_cfg.get("all", 60))
 
     now = datetime.now()
-    cutoff_movies = now - timedelta(days=retention_movies)
-    cutoff_tv = now - timedelta(days=retention_tv)
-
+    cutoff_date = now - timedelta(days=retention_days)
+ 
     deletions = jellyseer.get_old_requests(
-        whitelisted_users=whitelisted_users,
-        cutoff_datetime=min(cutoff_movies, cutoff_tv)
+        cutoff_datetime=cutoff_date
     )
 
     print(f"🧹 Found {len(deletions)} media items to delete")
 
-    for media_id, title in deletions:
-        print(f"🗑️  Would delete: {title} (ID: {media_id})")
+
+    for media_id, title, created_at, request_id, username in deletions:
+        if username in whitelisted_users:
+            #print(f"Skipping whitelisted user: {username}")
+            print(f"🙈  Skipping to delete request from {username}: {title} (ID: {media_id}), Created at: {created_at}, Request ID: {request_id}")
+
+            continue
+
+        print(f"🗑️  Would delete: {title} (ID: {media_id}), Created at: {created_at}, Request ID: {request_id}, Requested by: {username})")
         if not dry_run:
             jellyseer.delete_media(media_id)
 
