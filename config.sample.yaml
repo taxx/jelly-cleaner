@@ -1,6 +1,6 @@
 jellyseer:
   api_url: "http://192.168.1.2:5055/api/v1"
-  # Local jellyseeer account with admin rights
+  # Local jellyseeerr account with admin rights
   email: "user@example.com"
   password: "password"
 
